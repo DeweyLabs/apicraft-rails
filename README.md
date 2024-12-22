@@ -1,6 +1,6 @@
 # APICraft Rails
 [![Build](https://github.com/apicraft-dev/apicraft-rails/actions/workflows/build.yml/badge.svg)](https://github.com/apicraft-dev/apicraft-rails/actions/workflows/build.yml)
-[![Gem Version](https://d25lcipzij17d.cloudfront.net/badge.png?id=rb&r=r&ts=1683906897&type=3e&v=1.0.1&x2=0)](https://badge.fury.io/rb/apicraft-rails)
+[![Gem Version](https://d25lcipzij17d.cloudfront.net/badge.png?id=rb&r=r&ts=1683906897&type=3e&v=1.0.2&x2=0)](https://badge.fury.io/rb/apicraft-rails)
 
 🚀 Accelerates your development by 2-3x with an API Design First approach. Seamlessly integrates with your Rails application server — no fancy tooling or expenses required.
 
@@ -14,8 +14,6 @@ It avoids the pitfalls of the code-first methodology, where contracts are auto-g
 
 - [APICraft Rails](#apicraft-rails)
   - [✨ Features](#-features)
-  - [🔜 Upcoming Features](#-upcoming-features)
-  - [🪄 Works Like Magic](#-works-like-magic)
   - [🕊 API Design First Philosophy](#-api-design-first-philosophy)
   - [🏗 Installation](#-installation)
   - [⚙️ Usage](#️-usage)
@@ -24,6 +22,7 @@ It avoids the pitfalls of the code-first methodology, where contracts are auto-g
     - [🎮 Behaviour Mocking](#-behaviour-mocking)
     - [🧐 Introspection](#-introspection)
     - [📖 Documentation (Swagger docs and RapiDoc)](#-documentation-swagger-docs-and-rapidoc)
+    - [📖 CLI Support](#-cli-support)
   - [🔧 Configuration](#-configuration)
   - [🤝 Contributing](#-contributing)
   - [📝 License](#-license)
@@ -42,13 +41,7 @@ It avoids the pitfalls of the code-first methodology, where contracts are auto-g
 
 - 🗂 **Easy Contracts Management** - Management of `openapi` specifications from within `app/contracts` directory. No new syntax, just plain old `openapi` standard with `.json` or `.yaml` formats
 
-## 🔜 Upcoming Features
-- 💎 **Clean & Custom Ruby DSL** - Support for a Ruby DSL alongwith the current `.json` and `.yaml` formats.
-
-
-## 🪄 Works Like Magic
-
-Once you’ve installed the gem, getting started is a breeze. Simply create your OpenAPI contracts within the `app/contracts` directory of your Rails application. You’re free to organize this directory in a way that aligns with your project's standards and preferences. That’s it—your APIs will be up and running with mock responses, ready for development without any additional setup. It's as effortless as it sounds!
+- 🗂 **CLI Support** - Specification validations can be triggered from the CLI allowing integrations into your CI/CD pipelines.
 
 ## 🕊 API Design First Philosophy
 
@@ -71,41 +64,38 @@ By adopting an API Design First approach with APICraft Rails, you can accelerate
 
 ## 🏗 Installation
 
-Add this line to your application's Gemfile:
+1. Add this line to your application's Gemfile:
 
 ```ruby
-gem 'apicraft-rails', '~> 1.0.1'
+gem 'apicraft-rails', '~> 1.0.2'
 ```
 
-And then execute:
+2. And then execute:
+```bash
+$ bundle install
+$ rails apicraft:init
+```
 
-    $ bundle install
+This will create a file called `config/initializers/apicraft.rb` with all the necessary configurations. It will also create the default contracts directory called `app/contracts`.
 
-After the installation in your rails project, you can start adding contracts in the `app/contracts` directory. This can have any internal directory structure based on your API versions, standards, etc.
 
-Add the following into your Rails application, via the `config/application.rb`
+3. Add the `apicraft` route to your route file (for documentation):
 
 ```ruby
-# config/application.rb
-module App
-  class Application < Rails::Application
-    # Rest of the configuration...
-
-    [
-      Apicraft::Middlewares::Mocker,
-      Apicraft::Middlewares::Introspector,
-      Apicraft::Middlewares::RequestValidator
-    ].each { |mw| config.middleware.use mw }
-
-    Apicraft.configure do |config|
-      config.contracts_path = Rails.root.join("app/contracts")
-    end
-  end
+Rails.application.routes.draw do
+  # other routes
+  mount Apicraft::Web::App, at: "/apicraft"
 end
 ```
 
 Now every API in the specification has a functional version. For any path (from the contracts), APICraft serves a mock response when `Apicraft-Mock: true` is passed in the headers otherwise, it forwards the request to your application as usual.
 
+4. Generate a sample spec file
+```
+rails apicraft:generate file=v2/openapi
+```
+
+This will generate a sample file called `app/contracts/v2/openapi.yaml`
 ## ⚙️ Usage
 
 Add your specification files to the `app/contracts` directory in your Rails project. You can also configure this directory to be something else.
@@ -199,9 +189,7 @@ Example: `https://yoursite.com/api/orders`
       }
     }
   ],
-  "responses": {
-    ...
-  }
+  "responses": {}
 }
 ```
 ### 📖 Documentation (Swagger docs and RapiDoc)
@@ -238,6 +226,17 @@ RapiDoc                    |  SwaggerDoc
 :-------------------------:|:-------------------------:
 ![](assets/rapidoc.png)  |  ![](assets/swaggerdoc.png)
 
+### 📖 CLI Support
+
+To check if all the specification are valid
+```
+$ rails apicraft:validate
+```
+
+To generate a new spec file in the contracts directory
+```
+$ rails apicraft:generate file=openapi
+```
 ## 🔧 Configuration
 
 List of available configurations.

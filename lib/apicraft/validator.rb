@@ -5,28 +5,19 @@ module Apicraft
   # application's contract folder during the application boot.
   # This class is responsible for loading and initializing the
   # contracts defined in the YAML files.
-  class Loader
-    def self.load!
+  class Validator
+    def self.validate!
       contracts_path = Apicraft.config.contracts_path
-      return if contracts_path.blank?
-
-      raise Errors::InvalidContractsPath unless Dir.exist?(contracts_path)
+      raise Errors::InvalidContractsPath if contracts_path.blank? || !Dir.exist?(contracts_path)
 
       Find.find(contracts_path) do |path|
         next unless File.file?(path) && %w[.yaml .yml .json].include?(File.extname(path))
 
-        load_file!(path)
-
-        route = path.sub(contracts_path.to_s, "")
-        Web::Router.add(route, path)
+        validate_file!(path)
       end
     end
 
-    def self.config
-      Apicraft.config
-    end
-
-    def self.load_file!(file)
+    def self.validate_file!(file)
       ext = File.extname(file)
 
       parsed = if ext == ".json"
@@ -38,14 +29,13 @@ module Apicraft
       OpenAPIParser.parse(
         parsed,
         {
-          strict_reference_validation: config.strict_reference_validation,
-          expand_reference: true
+          strict_reference_validation: config.strict_reference_validation
         }
       )
+    end
 
-      Openapi::Contract.create!(
-        OpenAPIParser.parse(parsed)
-      )
+    def self.config
+      Apicraft.config
     end
   end
 end
